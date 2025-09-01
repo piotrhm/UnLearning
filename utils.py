@@ -66,13 +66,16 @@ def apply_lora_to_model(model, lora_state_dict, alpha=4):
 
         A_key = prefix + ".lora.A"
         B_key = prefix + ".lora.B"
+        L_key = prefix + ".lora.default_lora_latent_mapping"
         W_key = prefix + ".weight"  # the original weight in the model
 
 
         A = lora_state_dict[A_key].to(model_sd[W_key].device)
         B = lora_state_dict[B_key].to(model_sd[W_key].device)
+        L = lora_state_dict[L_key].to(model_sd[W_key].device)
 
-        delta = A.matmul(B)
+
+        delta = A @ L @ B
         delta = delta.T
         
         model_sd[W_key] = model_sd[W_key] + alpha * delta
