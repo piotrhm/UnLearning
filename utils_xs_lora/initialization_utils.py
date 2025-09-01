@@ -103,20 +103,20 @@ def find_and_initialize(model, peft_config, adapter_name, reconstr_type, reconst
                 if replacement_module_random_init:
                     kaiming_uniform_init(replacement_encoder_weight)
                     kaiming_uniform_init(replacement_decoder_weight)
-                replace_module_weights(target.lora.B.default, replacement_decoder_weight.T)
+                replace_module_weights(target.lora.B, replacement_decoder_weight.T)
                 
                 if r_squared:
                     target.lora.forward = types.MethodType(forward_latent, target.lora)
                     
-                    replace_module_weights(target.lora.A.default, replacement_encoder_weight.T)
+                    replace_module_weights(target.lora.A, replacement_encoder_weight.T)
                     target.default_lora_latent_mapping = torch.nn.Linear(lora_config.r, lora_config.r, bias=False)
                     init_module_weights(target.default_lora_latent_mapping, sigma=0.00001)
-                    target.default_lora_latent_mapping.to(target.lora.A.default.weight.device)
+                    target.default_lora_latent_mapping.to(target.lora.A.weight.device)
 
                     target.lora.A.default.weight.requires_grad = False  # only the r*r matrix will be tuned
                     target.lora.B.default.weight.requires_grad = False  # only the r*r matrix will be tuned
                 else:
-                    init_module_weights(target.lora.A.default, sigma=0.00001)
+                    init_module_weights(target.lora.A, sigma=0.00001)
 
 
     if not is_target_modules_in_base_model:
