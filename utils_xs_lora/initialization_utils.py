@@ -110,7 +110,7 @@ def find_and_initialize(model, peft_config, adapter_name, reconstr_type, reconst
                     replace_module_weights(target.lora_B.default, replacement_decoder_weight.T)
                     if r_squared:
                         target.forward = types.MethodType(forward_latent, target)
-                        target.get_delta_weight = types.MethodType(get_delta_weight, target)
+                        # target.get_delta_weight = types.MethodType(get_delta_weight, target)
                         replace_module_weights(target.lora_A.default, replacement_encoder_weight.T)
                         target.default_lora_latent_mapping = torch.nn.Linear(lora_config.r, lora_config.r, bias=False)
                         init_module_weights(target.default_lora_latent_mapping, sigma=0.00001)
