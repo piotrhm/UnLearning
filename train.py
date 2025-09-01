@@ -1,5 +1,6 @@
 import os
 import json
+import yaml
 import argparse
 from functools import partial
 
@@ -14,6 +15,7 @@ from tqdm import tqdm
 from ldm.util import instantiate_from_config
 from sampling import sample_model
 from lora import LoRALinear, inject_lora_nsfw, inject_lora
+from peft import LoraConfig
 
 def parse_args():
     """Parse command line arguments"""
@@ -190,6 +192,25 @@ def main():
     else:
         inject_lora(model.model.diffusion_model, args.target_modules, lora_factory)
 
+    # Convert to LoRA-XS
+    from utils_xs_lora.initialization_utils import find_and_initialize
+    adapter_name = "default"
+    lora_config = LoraConfig(
+            r=args.lora_rank,
+            lora_alpha=args.lora_alpha,
+            target_modules=args.target_modules,
+            lora_dropout=0,
+            task_type="CAUSAL_LM",
+        )
+    peft_config_dict = {adapter_name: lora_config}
+
+    with open("configs/reconstruct_config.yaml", 'r') as stream:
+        reconstr_config = yaml.load(stream, Loader=yaml.FullLoader)
+    reconstr_type = reconstr_config['reconstruction_type']
+    reconstr_config[reconstr_type]['rank'] = peft_config_dict[adapter_name].r
+    find_and_initialize(model.model.diffusion_model, peft_config_dict, adapter_name=adapter_name, reconstr_type=reconstr_type,
+                        writer=None, reconstruct_config=reconstr_config)
+    
     # Get trainable parameters (only LoRA layers)
     lora_layers = list(
         filter(lambda p: p.requires_grad, model.model.diffusion_model.parameters())
