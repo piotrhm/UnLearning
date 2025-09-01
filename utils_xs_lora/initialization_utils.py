@@ -35,7 +35,7 @@ def init_module_weights(target_module: torch.nn.Linear, sigma: float):
 
 
 def replace_module_weights(target_module, new_weight):
-    device = target_module.weight.device
+    device = target_module.device
     target_module.weight = torch.nn.Parameter(new_weight)
 
     # dispatch to correct device
