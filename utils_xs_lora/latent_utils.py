@@ -52,7 +52,7 @@ def forward_latent(self, x: torch.Tensor):
     B = self.B.to(x.device)
     return F.linear(
         self.default_lora_latent_mapping(
-            F.linear(x, self.A.T)
+            F.linear(x, A.T)
         ),
-        self.B.T
+        B.T
     ) * self.alpha
