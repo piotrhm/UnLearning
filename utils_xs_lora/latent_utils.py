@@ -48,8 +48,9 @@ def get_delta_weight(self, adapter) -> torch.Tensor:
 
 
 def forward_latent(self, x: torch.Tensor):
-    return self.B(
-            self.default_lora_latent_mapping(
-                self.A(x)
-            )
-        ) * self.alpha
+    return F.linear(
+        self.default_lora_latent_mapping(
+            F.linear(x, self.A.T)
+        ),
+        self.B.T
+    ) * self.alpha
