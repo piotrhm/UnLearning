@@ -92,38 +92,32 @@ def find_and_initialize(model, peft_config, adapter_name, reconstr_type, reconst
             _, target, target_name = _get_submodules(model, key)
 
             if reconstruction_mode == 'separated':
-                replacement_encoder_weight, replacement_decoder_weight = get_replacement_module(weight=target.weight.T,
+                replacement_encoder_weight, replacement_decoder_weight = get_replacement_module(weight=target.original.weight.T,
                                                                                                 module_name=key,
                                                                                                 type=reconstr_type,
                                                                                                 writer=writer,
                                                                                                 reconstruct_config=reconstruct_config)
 
-                if not isinstance(target, peft.tuners.lora.Linear):
-                    raise NotImplementedError('Only initialization for peft.tuners.lora.Linear type is implemented.')
-                    # TODO implement for Linear8bitLt
+                if half_init_dec:
+                    kaiming_uniform_init_lower_half(replacement_decoder_weight)
+                if replacement_module_random_init:
+                    kaiming_uniform_init(replacement_encoder_weight)
+                    kaiming_uniform_init(replacement_decoder_weight)
+                replace_module_weights(target.lora.B.default, replacement_decoder_weight.T)
+                
+                if r_squared:
+                    target.lora.forward = types.MethodType(forward_latent, target.lora)
+                    
+                    replace_module_weights(target.lora.A.default, replacement_encoder_weight.T)
+                    target.default_lora_latent_mapping = torch.nn.Linear(lora_config.r, lora_config.r, bias=False)
+                    init_module_weights(target.default_lora_latent_mapping, sigma=0.00001)
+                    target.default_lora_latent_mapping.to(target.lora.A.default.weight.device)
+
+                    target.lora.A.default.weight.requires_grad = False  # only the r*r matrix will be tuned
+                    target.lora.B.default.weight.requires_grad = False  # only the r*r matrix will be tuned
                 else:
-                    if half_init_dec:
-                        kaiming_uniform_init_lower_half(replacement_decoder_weight)
-                    if replacement_module_random_init:
-                        kaiming_uniform_init(replacement_encoder_weight)
-                        kaiming_uniform_init(replacement_decoder_weight)
-                    replace_module_weights(target.lora_B.default, replacement_decoder_weight.T)
-                    if r_squared:
-                        target.forward = types.MethodType(forward_latent, target)
-                        # target.get_delta_weight = types.MethodType(get_delta_weight, target)
-                        replace_module_weights(target.lora_A.default, replacement_encoder_weight.T)
-                        target.default_lora_latent_mapping = torch.nn.Linear(lora_config.r, lora_config.r, bias=False)
-                        init_module_weights(target.default_lora_latent_mapping, sigma=0.00001)
-                        target.default_lora_latent_mapping.to(target.lora_A.default.weight.device)
+                    init_module_weights(target.lora.A.default, sigma=0.00001)
 
-                        target.lora_A.default.weight.requires_grad = False  # only the r*r matrix will be tuned
-                        target.lora_B.default.weight.requires_grad = False  # only the r*r matrix will be tuned
-
-                    else:
-                        init_module_weights(target.lora_A.default, sigma=0.00001)
-
-            else:
-                raise NotImplementedError("The only supported mode is: separated.")
 
     if not is_target_modules_in_base_model:
         raise ValueError(
