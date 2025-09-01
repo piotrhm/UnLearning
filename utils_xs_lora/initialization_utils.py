@@ -36,12 +36,7 @@ def init_module_weights(target_module: torch.nn.Linear, sigma: float):
 
 def replace_module_weights(target_module, new_weight):
     device = target_module.device
-    target_module.weight = torch.nn.Parameter(new_weight)
-
-    # dispatch to correct device
-    for name, module in target_module.named_modules():
-        if "lora_" in name:
-            module.to(device)
+    target_module = torch.nn.Parameter(new_weight)
 
 
 def update_decoder_weights(target_module, new_weight):
