@@ -106,10 +106,10 @@ def find_and_initialize(model, peft_config, adapter_name, reconstr_type, reconst
                     replace_module_weights(target.lora.A, replacement_encoder_weight.T)
                     target.default_lora_latent_mapping = torch.nn.Linear(lora_config.r, lora_config.r, bias=False)
                     init_module_weights(target.default_lora_latent_mapping, sigma=0.00001)
-                    target.default_lora_latent_mapping.to(target.lora.A.weight.device)
+                    target.default_lora_latent_mapping.to(target.lora.A.device)
 
-                    target.lora.A.default.weight.requires_grad = False  # only the r*r matrix will be tuned
-                    target.lora.B.default.weight.requires_grad = False  # only the r*r matrix will be tuned
+                    target.lora.A.requires_grad = False  # only the r*r matrix will be tuned
+                    target.lora.B.requires_grad = False  # only the r*r matrix will be tuned
                 else:
                     init_module_weights(target.lora.A, sigma=0.00001)
 
