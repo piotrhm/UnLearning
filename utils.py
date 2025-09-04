@@ -75,7 +75,7 @@ def apply_lora_to_model(model, lora_state_dict, alpha=4):
         L = lora_state_dict[L_key].to(model_sd[W_key].device)
 
 
-        delta = A @ L @ B
+        delta = A @ L.weight @ B
         delta = delta.T
         
         model_sd[W_key] = model_sd[W_key] + alpha * delta
