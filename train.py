@@ -228,7 +228,7 @@ def main():
     model.model.diffusion_model.use_checkpoint = False
 
     # Initialize training components
-    optimizer = torch.optim.Adam(lora_layers, lr=args.lr)
+    optimizer = torch.optim.AdamW(lora_layers, lr=args.lr)
     criterion = torch.nn.MSELoss()
     losses = []
 
