@@ -216,6 +216,8 @@ def main():
         filter(lambda p: p.requires_grad, model.model.diffusion_model.parameters())
     )
     print(f"Total trainable parameters: {len(lora_layers)}")
+    trainable_params = sum(p.numel() for p in model.model.diffusion_model.parameters() if p.requires_grad)
+    print(f"Total trainable parameters (weights): {trainable_params}")
     print_trainable_parameters(model)
 
     # Set model to training mode
