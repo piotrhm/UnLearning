@@ -8,7 +8,7 @@ from peft.utils import _get_submodules
 from torch.nn import init
 from tqdm import tqdm
 
-from .latent_utils import get_delta_weight, forward_latent
+from .latent_utils import forward_latent
 from .svd_utils import get_linear_rec_svd
 
 
@@ -107,7 +107,8 @@ def find_and_initialize(model, peft_config, adapter_name, reconstr_type, reconst
                     target.lora.default_lora_latent_mapping = torch.nn.Linear(lora_config.r, lora_config.r, bias=False)
                     init_module_weights(target.lora.default_lora_latent_mapping, sigma=0.00001)
                     target.lora.default_lora_latent_mapping.to(target.lora.A.device)
-
+                    
+                    target.lora.default_lora_latent_mapping.requires_grad = True
                     target.lora.A.requires_grad = False  # only the r*r matrix will be tuned
                     target.lora.B.requires_grad = False  # only the r*r matrix will be tuned
                 else:
