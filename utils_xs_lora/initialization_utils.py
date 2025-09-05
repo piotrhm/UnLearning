@@ -108,7 +108,10 @@ def find_and_initialize(model, peft_config, adapter_name, reconstr_type, reconst
                     init_module_weights(target.lora.default_lora_latent_mapping, sigma=0.00001)
                     target.lora.default_lora_latent_mapping.to(target.lora.A.device)
                     
-                    target.lora.default_lora_latent_mapping.requires_grad = True
+                    target.lora.default_lora_latent_mapping.weight.requires_grad = True
+                    
+                    print(target.lora.default_lora_latent_mapping.weight.requires_grad)
+                    print(target.lora.default_lora_latent_mapping.weight.weight.shape)  
                     target.lora.A.requires_grad = False  # only the r*r matrix will be tuned
                     target.lora.B.requires_grad = False  # only the r*r matrix will be tuned
                 else:
