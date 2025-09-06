@@ -66,8 +66,6 @@ def find_and_initialize(model, peft_config, adapter_name, reconstr_type, reconst
     :param reconstr_type: options: 'svd'
     """
     
-    # half_init_dec = reconstruct_config['half_init_dec']
-    # replacement_module_random_init = reconstruct_config['replacement_module_random_init']
     reconstruction_mode = reconstruct_config['reconstr_mode']
     lora_config = peft_config[adapter_name]
     
@@ -89,11 +87,6 @@ def find_and_initialize(model, peft_config, adapter_name, reconstr_type, reconst
                                                                                                 writer=writer,
                                                                                                 reconstruct_config=reconstruct_config)
 
-                # if half_init_dec:
-                #     kaiming_uniform_init_lower_half(replacement_decoder_weight)
-                # if replacement_module_random_init:
-                #     kaiming_uniform_init(replacement_encoder_weight)
-                #     kaiming_uniform_init(replacement_decoder_weight)
                 replace_module_weights(target.lora.B, replacement_decoder_weight.T)
                 replace_module_weights(target.lora.A, replacement_encoder_weight.T)
 

@@ -215,12 +215,12 @@ def main():
     lora_layers = list(
         filter(lambda p: p.requires_grad, model.model.diffusion_model.parameters())
     )
-    print(f"Total trainable parameters: {len(lora_layers)}")
-    trainable_params = sum(p.numel() for p in model.model.diffusion_model.parameters() if p.requires_grad)
+    print(f"Total trainable parameters (lora layers): {len(lora_layers)}")
+    trainable_params = sum(
+        p.numel() for p in model.model.diffusion_model.parameters() if p.requires_grad
+    )
     print(f"Total trainable parameters (weights): {trainable_params}")
     
-    print_trainable_parameters(model)
-
     # Set model to training mode
     model.train()
 
@@ -229,7 +229,7 @@ def main():
     model.model.diffusion_model.use_checkpoint = False
 
     # Initialize training components
-    optimizer = torch.optim.AdamW(lora_layers, lr=args.lr)
+    optimizer = torch.optim.Adam(lora_layers, lr=args.lr)
     criterion = torch.nn.MSELoss()
     losses = []
 
