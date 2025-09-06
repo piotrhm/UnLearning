@@ -37,17 +37,18 @@ def init_module_weights(target_module: torch.nn.Linear, sigma: float):
 def replace_module_weights(target_module, new_weight):
     device = target_module.device
     target_module = torch.nn.Parameter(new_weight)
+    target_module.to(device)
 
 
-def update_decoder_weights(target_module, new_weight):
-    device = target_module.weight.device
-    with torch.no_grad():
-        target_module.weight.copy_(new_weight)
+# def update_decoder_weights(target_module, new_weight):
+#     device = target_module.weight.device
+#     with torch.no_grad():
+#         target_module.weight.copy_(new_weight)
 
-    # dispatch to correct device
-    for name, module in target_module.named_modules():
-        if "lora_" in name:
-            module.to(device)
+#     # dispatch to correct device
+#     for name, module in target_module.named_modules():
+#         if "lora_" in name:
+#             module.to(device)
 
 
 def kaiming_uniform_init_lower_half(matrix: torch.tensor):
@@ -64,17 +65,12 @@ def find_and_initialize(model, peft_config, adapter_name, reconstr_type, reconst
     :param adapter_name: options: 'default'
     :param reconstr_type: options: 'svd'
     """
-    half_init_dec = reconstruct_config['half_init_dec']
-    replacement_module_random_init = reconstruct_config['replacement_module_random_init']
+    
+    # half_init_dec = reconstruct_config['half_init_dec']
+    # replacement_module_random_init = reconstruct_config['replacement_module_random_init']
     reconstruction_mode = reconstruct_config['reconstr_mode']
     lora_config = peft_config[adapter_name]
-    r_squared = reconstruct_config['r_squared']  # whether using r*r matrix between lora_A and lora_B or not
-    loaded_in_8bit = getattr(model, "is_loaded_in_8bit", False)
-    if loaded_in_8bit and not is_bnb_available():
-        raise ImportError(
-            "To use Lora with 8-bit quantization, please install the `bitsandbytes` package. "
-            "You can install it with `pip install bitsandbytes`."
-        )
+    
     is_target_modules_in_base_model = False
     key_list = [key for key, _ in model.named_modules()]
     assert (not isinstance(lora_config.target_modules, str))
@@ -93,30 +89,24 @@ def find_and_initialize(model, peft_config, adapter_name, reconstr_type, reconst
                                                                                                 writer=writer,
                                                                                                 reconstruct_config=reconstruct_config)
 
-                if half_init_dec:
-                    kaiming_uniform_init_lower_half(replacement_decoder_weight)
-                if replacement_module_random_init:
-                    kaiming_uniform_init(replacement_encoder_weight)
-                    kaiming_uniform_init(replacement_decoder_weight)
+                # if half_init_dec:
+                #     kaiming_uniform_init_lower_half(replacement_decoder_weight)
+                # if replacement_module_random_init:
+                #     kaiming_uniform_init(replacement_encoder_weight)
+                #     kaiming_uniform_init(replacement_decoder_weight)
                 replace_module_weights(target.lora.B, replacement_decoder_weight.T)
-                
-                if r_squared:
-                    target.lora.forward = types.MethodType(forward_latent, target.lora)
-                    
-                    replace_module_weights(target.lora.A, replacement_encoder_weight.T)
-                    target.lora.default_lora_latent_mapping = torch.nn.Linear(lora_config.r, lora_config.r, bias=False)
-                    init_module_weights(target.lora.default_lora_latent_mapping, sigma=0.00001)
-                    target.lora.default_lora_latent_mapping.to(target.lora.A.device)
-                    
-                    target.lora.default_lora_latent_mapping.weight.requires_grad = True
-                    
-                    print(target.lora.default_lora_latent_mapping.weight.requires_grad)
-                    print(target.lora.default_lora_latent_mapping.weight.shape)  
-                    target.lora.A.requires_grad = False  # only the r*r matrix will be tuned
-                    target.lora.B.requires_grad = False  # only the r*r matrix will be tuned
-                else:
-                    init_module_weights(target.lora.A, sigma=0.00001)
+                replace_module_weights(target.lora.A, replacement_encoder_weight.T)
 
+                target.lora.forward = types.MethodType(forward_latent, target.lora)
+                
+                target.lora.default_lora_latent_mapping = torch.nn.Linear(lora_config.r, lora_config.r, bias=False)
+                init_module_weights(target.lora.default_lora_latent_mapping, sigma=0.00001)
+                target.lora.default_lora_latent_mapping.to(target.lora.A.device)
+                
+                target.lora.default_lora_latent_mapping.weight.requires_grad = True
+                
+                target.lora.A.requires_grad = False
+                target.lora.B.requires_grad = False
 
     if not is_target_modules_in_base_model:
         raise ValueError(
