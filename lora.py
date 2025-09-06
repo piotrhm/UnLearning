@@ -34,7 +34,11 @@ class LoRALinear(nn.Module):
         )
 
     def forward(self, x):
-        return self.original(x) + self.lora(x)
+        lora =  self.lora(x)
+        orginal = self.original(x)
+        
+        print(f"Original: {orginal}, LoRA: {lora}")
+        return orginal + lora
 
 
 def inject_lora(
