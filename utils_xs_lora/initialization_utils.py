@@ -100,6 +100,10 @@ def find_and_initialize(model, peft_config, adapter_name, reconstr_type, reconst
                 
                 target.lora.A.requires_grad = False
                 target.lora.B.requires_grad = False
+                
+                print(target.lora.default_lora_latent_mapping.weight)
+                print(target.lora.A)
+                print(target.lora.B)
 
     if not is_target_modules_in_base_model:
         raise ValueError(
