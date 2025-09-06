@@ -37,7 +37,7 @@ class LoRALinear(nn.Module):
         lora =  self.lora(x)
         orginal = self.original(x)
         
-        print(f"Original: {orginal}, LoRA: {lora}")
+        #print(f"Original: {orginal}, LoRA: {lora}")
         return orginal + lora
 
 
