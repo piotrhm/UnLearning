@@ -7,6 +7,5 @@ def forward_latent(self, x: torch.Tensor):
     B = self.B.to(x.device)
     L = self.default_lora_latent_mapping.to(x.device)
     
-    delta = A @ L.weight @ B
-    delta = delta.T
+    delta = X @ A @ L.weight @ B
     return delta * self.alpha
