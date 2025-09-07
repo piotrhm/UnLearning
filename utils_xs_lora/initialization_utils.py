@@ -107,6 +107,8 @@ def find_and_initialize(model, peft_config, adapter_name, reconstr_type, reconst
                 print(target.lora.default_lora_latent_mapping.weight)
                 print(target.lora.A)
                 print(target.lora.B)
+                if not target.lora.B.any():
+                    print("All zeros")
 
     if not is_target_modules_in_base_model:
         raise ValueError(
