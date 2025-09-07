@@ -15,4 +15,7 @@ def get_linear_rec_svd(input_matrix: np.ndarray, rank: int, n_iter: int,
     reduced_matrix, svd = run_svd(input_matrix, rank, n_iter, random_state)
 
     reconstructed_matrix = svd.inverse_transform(reduced_matrix)
-    return reconstructed_matrix, reduced_matrix, svd.components_
+    return reconstructed_matrix, reduced_matrix, svd.components_ 
+
+# svd.components_ is V_r^T
+# reduced_matrix is U_r Σ_r

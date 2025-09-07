@@ -15,9 +15,12 @@ from .svd_utils import get_linear_rec_svd
 def get_replacement_module(weight, module_name, type, writer, reconstruct_config):
     cfg = reconstruct_config[type]
     if type == 'svd':
-        reconstructed_matrix, enc, dec = get_linear_rec_svd(weight.cpu().detach().numpy(), cfg['rank'],
-                                                            cfg['n_iter'],
-                                                            cfg['random_state'])
+        reconstructed_matrix, enc, dec = get_linear_rec_svd(
+            weight.cpu().detach().numpy(), 
+            cfg['rank'],
+            cfg['n_iter'],
+            cfg['random_state']
+        )
         final_enc = torch.tensor(enc, dtype=weight.dtype, device=weight.device)
         final_dec = torch.tensor(dec, dtype=weight.dtype, device=weight.device)
     else:
