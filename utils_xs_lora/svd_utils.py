@@ -47,7 +47,10 @@ def svd_lowrank(W: torch.Tensor, rank: int, sigma_split: str = "sym", eps: float
     S = S[:r]               # (r,)
     Vh = Vh[:r, :]          # (r, n)
     
-    print(U, S, Vh)
+    print("SVD results:")
+    print("U: ", U)
+    print("S: ", S)
+    print("Vh: ", Vh)
 
     # Avoid sqrt(0) and tiny underflow in half/bfloat16 later.
     S_safe = torch.clamp(S, min=eps)
