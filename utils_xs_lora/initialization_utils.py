@@ -17,7 +17,6 @@ def get_replacement_module(weight, module_name, type, writer, reconstruct_config
     if type != 'svd':
         raise NotImplementedError(f"{type} is currently not supported.")
 
-    # weight expected shape: (out_dim, in_dim), DO NOT .T here
     A, B = svd_lowrank(weight, rank=cfg['rank'], split_sigma=cfg.get('sigma_split', 'left'))
 
     final_enc = A.to(dtype=weight.dtype, device=weight.device).contiguous()
@@ -82,7 +81,7 @@ def find_and_initialize(model, peft_config, adapter_name, reconstr_type, reconst
             _, target, target_name = _get_submodules(model, key)
 
             if reconstruction_mode == 'separated':
-                replacement_encoder_weight, replacement_decoder_weight = get_replacement_module(weight=target.original.weight,
+                replacement_encoder_weight, replacement_decoder_weight = get_replacement_module(weight=target.original.weight.T,
                                                                                                 module_name=key,
                                                                                                 type=reconstr_type,
                                                                                                 writer=writer,
