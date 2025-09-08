@@ -82,6 +82,7 @@ def apply_lora_to_model(model, lora_state_dict, alpha=4):
         print(delta.shape)
         print(A.shape)
         print(B.shape)
-        model_sd[W_key] = model_sd[W_key] + alpha * delta
+        print(model_sd[W_key].shape)
+        model_sd[W_key] = model_sd[W_key] + alpha * delta.T
 
     model.load_state_dict(model_sd, strict=False)
