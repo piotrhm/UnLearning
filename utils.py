@@ -66,10 +66,10 @@ def apply_lora_to_model(model, lora_state_dict, alpha=4):
         
     print("Applying LoRA adapters to model weights...")
     for lora_L_key in [k for k in lora_state_dict if k.endswith(".lora.default_lora_latent_mapping.weight")]:
-        prefix = lora_L_key[:-len(".lora.default_lora_latent_mapping")]
+        prefix = lora_L_key[:-len(".lora.default_lora_latent_mapping.weight")]
         print(prefix)
         
-        L_key = prefix + ".lora.default_lora_latent_mapping"
+        L_key = prefix + ".lora.default_lora_latent_mapping.weight"
         W_key = prefix + ".weight"
 
         L = lora_state_dict[L_key].to(model_sd[W_key].device)
