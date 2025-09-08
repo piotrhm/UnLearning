@@ -80,7 +80,7 @@ def apply_lora_to_model(model, lora_state_dict, alpha=4):
         reconstr_config = yaml.load(stream, Loader=yaml.FullLoader)
     reconstr_type = reconstr_config['reconstruction_type']
     reconstr_config[reconstr_type]['rank'] = peft_config_dict[adapter_name].r
-    find_and_initialize(model.model.diffusion_model, peft_config_dict, adapter_name=adapter_name, reconstr_type=reconstr_type,
+    find_and_initialize(model, peft_config_dict, adapter_name=adapter_name, reconstr_type=reconstr_type,
                         writer=None, reconstruct_config=reconstr_config)
    
     for lora_L_key in [k for k in lora_state_dict if k.endswith(".lora.default_lora_latent_mapping")]:
