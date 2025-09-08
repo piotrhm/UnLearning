@@ -82,7 +82,7 @@ def find_and_initialize(model, peft_config, adapter_name, reconstr_type, reconst
             _, target, target_name = _get_submodules(model, key)
 
             if reconstruction_mode == 'separated':
-                replacement_encoder_weight, replacement_decoder_weight = get_replacement_module(weight=target.original.weight.T,
+                replacement_encoder_weight, replacement_decoder_weight = get_replacement_module(weight=target.original.weight,
                                                                                                 module_name=key,
                                                                                                 type=reconstr_type,
                                                                                                 writer=writer,
