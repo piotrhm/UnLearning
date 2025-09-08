@@ -99,6 +99,9 @@ def find_and_initialize(model, peft_config, adapter_name, reconstr_type, reconst
                                                                                                 writer=writer,
                                                                                                 reconstruct_config=reconstruct_config)
 
+                
+                print(replacement_decoder_weight)
+                             
                 replace_module_weights(target.lora.B, replacement_decoder_weight.T)
                 replace_module_weights(target.lora.A, replacement_encoder_weight.T)
 
