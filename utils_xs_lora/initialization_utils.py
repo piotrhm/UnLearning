@@ -18,7 +18,7 @@ def get_replacement_module(weight, module_name, type, writer, reconstruct_config
         raise NotImplementedError(f"{type} is currently not supported.")
 
     # weight expected shape: (out_dim, in_dim), DO NOT .T here
-    A, B = svd_lowrank(weight, rank=cfg['rank'], sigma_split=cfg.get('sigma_split', 'left'))
+    A, B = svd_lowrank(weight, rank=cfg['rank'], sigma_split='left')
 
     final_enc = A.to(dtype=weight.dtype, device=weight.device).contiguous()
     final_dec = B.to(dtype=weight.dtype, device=weight.device).contiguous()
