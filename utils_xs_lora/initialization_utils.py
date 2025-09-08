@@ -1,6 +1,6 @@
 import types
-
 import torch
+
 from peft.utils import _get_submodules
 from tqdm import tqdm
 
@@ -56,17 +56,16 @@ def find_and_initialize(model, peft_config, adapter_name, reconstr_type, reconst
             _, target, _ = _get_submodules(model, key)
 
             if reconstruction_mode == 'separated':
-                A_svd, B_svd = get_replacement_module(
+                A_replacement, B_replacement = get_replacement_module(
                     weight=target.original.weight.T,
                     type=reconstr_type,
                     reconstruct_config=reconstruct_config
                 )
 
-                replace_module_weights(target.lora.B, A_svd)
-                replace_module_weights(target.lora.A, B_svd)
+                replace_module_weights(target.lora.A, A_replacement)
+                replace_module_weights(target.lora.B, B_replacement)
 
                 target.lora.forward = types.MethodType(forward_latent, target.lora)
-                
                 target.lora.default_lora_latent_mapping = torch.nn.Linear(lora_config.r, lora_config.r, bias=False)
                 init_module_weights(target.lora.default_lora_latent_mapping, sigma=0.00001)
                 target.lora.default_lora_latent_mapping.to(target.lora.A.device)
