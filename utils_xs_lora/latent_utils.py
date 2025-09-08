@@ -1,6 +1,4 @@
 import torch
-import torch.nn.functional as F
-
 
 def forward_latent(self, x: torch.Tensor):
     A = self.A.to(x.device)
