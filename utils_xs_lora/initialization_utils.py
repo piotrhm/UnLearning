@@ -16,7 +16,7 @@ def get_replacement_module(weight, module_name, type, writer, reconstruct_config
     cfg = reconstruct_config[type]
     if type == 'svd':
         enc, dec = svd_lowrank(
-            weight.cpu().detach().numpy(), 
+            weight.cpu().detach(), 
             cfg['rank']
         )
         final_enc = torch.tensor(enc, dtype=weight.dtype, device=weight.device)
