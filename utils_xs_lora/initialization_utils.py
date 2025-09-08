@@ -46,10 +46,10 @@ def init_module_weights(target_module: torch.nn.Linear, sigma: float):
             torch.nn.init.zeros_(target_module.bias)
 
 
-def replace_module_weights(target_module, new_weight):
-    device = target_module.device
-    target_module = torch.nn.Parameter(new_weight)
-    target_module.to(device)
+def replace_module_weights(param: torch.nn.Parameter, new_weight: torch.Tensor):
+    new_weight = new_weight.to(param.device, dtype=param.dtype)
+    with torch.no_grad():
+        param.copy_(new_weight)
 
 
 # def update_decoder_weights(target_module, new_weight):
