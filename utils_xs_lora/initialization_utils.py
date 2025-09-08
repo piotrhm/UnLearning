@@ -101,7 +101,10 @@ def find_and_initialize(model, peft_config, adapter_name, reconstr_type, reconst
 
                 
                 print(replacement_decoder_weight)
-                             
+                print("Expected A shape:", target.lora.A.shape)
+                print("Expected B shape:", target.lora.B.shape)
+                print("Got encoder (replacement_encoder_weight):", replacement_encoder_weight.shape)
+                print("Got decoder (replacement_decoder_weight):", replacement_decoder_weight.shape)
                 replace_module_weights(target.lora.B, replacement_decoder_weight.T)
                 replace_module_weights(target.lora.A, replacement_encoder_weight.T)
 
