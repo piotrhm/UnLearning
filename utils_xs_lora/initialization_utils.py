@@ -14,15 +14,26 @@ from .svd_utils import get_linear_rec_svd, svd_lowrank
 
 def get_replacement_module(weight, module_name, type, writer, reconstruct_config):
     cfg = reconstruct_config[type]
-    if type == 'svd':
-        enc, dec = svd_lowrank(
-            weight.cpu().detach().float(), 
-            cfg['rank']
-        )
-        final_enc = torch.tensor(enc, dtype=weight.dtype, device=weight.device)
-        final_dec = torch.tensor(dec, dtype=weight.dtype, device=weight.device)
-    else:
+    if type != 'svd':
         raise NotImplementedError(f"{type} is currently not supported.")
+
+    # weight expected shape: (out_dim, in_dim), DO NOT .T here
+    A, B = svd_lowrank(weight, rank=cfg['rank'], sigma_split=cfg.get('sigma_split', 'sym'))
+
+    final_enc = A.to(dtype=weight.dtype, device=weight.device).contiguous()
+    final_dec = B.to(dtype=weight.dtype, device=weight.device).contiguous()
+
+    # Sanity checks (safe prints/logs)
+    if writer is None:
+        # minimal runtime checks
+        if torch.all(final_enc == 0) or torch.all(final_dec == 0):
+            raise RuntimeError(
+                f"[{module_name}] A/B are zero. "
+                f"normW={weight.float().norm():.3e}, "
+                f"normA={final_enc.float().norm():.3e}, "
+                f"normB={final_dec.float().norm():.3e}"
+            )
+
     return final_enc, final_dec
 
 
