@@ -145,14 +145,15 @@ def main():
 
                 # Compute epsilon predictions for both models
                 eps_lora = model.apply_model(z_batch, t_enc_ddpm, cond)
-                print("eps_lora ", eps_lora)
+                #print("eps_lora ", eps_lora)
                 eps_orig = model_orig.apply_model(z_batch, t_enc_ddpm, cond_orig)
-                print("eps_orig ", eps_orig)
+                #print("eps_orig ", eps_orig)
 
                 # Compute norm of the difference and record it
                 diffs = (
                     eps_lora - eps_orig
                 ).view(n_samples, -1).norm(dim=1).cpu().numpy().tolist()
+                print(diffs)
                 prompt_diffs[prompt].extend(diffs)
 
                 # Free up GPU memory
