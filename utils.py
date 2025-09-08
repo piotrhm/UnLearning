@@ -2,10 +2,9 @@ from ldm.util import instantiate_from_config
 from omegaconf import OmegaConf
 import torch
 import numpy as np
-import yaml
 
 from ldm.models.diffusion.ddimcopy import DDIMSampler
-from peft import LoraConfig
+from utils_xs_lora.svd_utils import svd_lowrank
 
 
 def set_seed(seed: int):
@@ -66,22 +65,7 @@ def apply_lora_to_model(model, lora_state_dict, alpha=4):
     model_sd = model.state_dict()
     
     from utils_xs_lora.initialization_utils import find_and_initialize
-    adapter_name = "default"
-    lora_config = LoraConfig(
-            r=40,
-            lora_alpha=16,
-            target_modules=["attn2.to_k", "attn2.to_v"],
-            lora_dropout=0,
-            task_type="CAUSAL_LM",
-        )
-    peft_config_dict = {adapter_name: lora_config}
-
-    with open("configs/reconstruct_config.yaml", 'r') as stream:
-        reconstr_config = yaml.load(stream, Loader=yaml.FullLoader)
-    reconstr_type = reconstr_config['reconstruction_type']
-    reconstr_config[reconstr_type]['rank'] = peft_config_dict[adapter_name].r
-    find_and_initialize(model, peft_config_dict, adapter_name=adapter_name, reconstr_type=reconstr_type,
-                        writer=None, reconstruct_config=reconstr_config)
+    
    
     for lora_L_key in [k for k in lora_state_dict if k.endswith(".lora.default_lora_latent_mapping")]:
         prefix = lora_L_key[:-len(".lora.default_lora_latent_mapping")]
@@ -90,9 +74,9 @@ def apply_lora_to_model(model, lora_state_dict, alpha=4):
         L_key = prefix + ".lora.default_lora_latent_mapping"
         W_key = prefix + ".weight"
 
-        A = model.lora.A
-        B = model.lora.B
         L = lora_state_dict[L_key].to(model_sd[W_key].device)
+        
+        A, B, svd_lowrank(model_sd[W_key].T, rank=40, split_sigma='left')
 
         delta = A @ L.weight @ B
         model_sd[W_key] = model_sd[W_key] + alpha * delta

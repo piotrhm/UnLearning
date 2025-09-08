@@ -57,7 +57,7 @@ def find_and_initialize(model, peft_config, adapter_name, reconstr_type, reconst
 
             if reconstruction_mode == 'separated':
                 A_replacement, B_replacement = get_replacement_module(
-                    weight=target.weight.T,
+                    weight=target.original.weight.T,
                     type=reconstr_type,
                     reconstruct_config=reconstruct_config
                 )
