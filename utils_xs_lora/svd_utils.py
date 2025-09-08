@@ -23,54 +23,30 @@ def get_linear_rec_svd(input_matrix: np.ndarray, rank: int, n_iter: int,
 
 
 @torch.no_grad()
-def svd_lowrank(W: torch.Tensor, rank: int, sigma_split: str = "sym", eps: float = 1e-12):
+def svd_lowrank(W: torch.Tensor, rank: int, split_sigma: str = "left"):
     """
-    W: (out_dim, in_dim) torch.Tensor
-    rank: desired rank (will be clipped to min(out_dim, in_dim))
-    sigma_split: "sym" | "left" | "right"
-      - "sym":  A = U * sqrt(S),   B = sqrt(S) * Vh
-      - "left": A = U * S,         B = Vh
-      - "right":A = U,             B = S * Vh
-    eps: floor for tiny singular values to avoid sqrt underflow in low-precision dtypes
+    Low-rank factorization of W into A, B for LoRA-style update.
+    split_sigma:
+      - "sym": split sqrt(S) across A and B  (default, balanced)
+      - "left": put all S in A
+      - "right": put all S in B
     """
-    assert W.ndim == 2, f"weight must be 2D, got {tuple(W.shape)}"
-    m, n = W.shape
-    r = min(rank, m, n)
-    if r <= 0:
-        raise ValueError(f"rank must be > 0, got {rank}")
+    # Always work in fp32 for stability
+    W = W.to(torch.float32)
 
-    # Always factorize in fp32 for numerical stability.
-    W32 = W.detach().to(torch.float32).cpu()
+    U, S, Vh = torch.linalg.svd(W, full_matrices=False)
+    U_r, S_r, Vh_r = U[:, :rank], S[:rank], Vh[:rank, :]
 
-    U, S, Vh = torch.linalg.svd(W32, full_matrices=False)
-    U = U[:, :r]            # (m, r)
-    S = S[:r]               # (r,)
-    Vh = Vh[:r, :]          # (r, n)
-
-    # Avoid sqrt(0) and tiny underflow in half/bfloat16 later.
-    S_safe = torch.clamp(S, min=eps)
-    sqrtS = torch.sqrt(S_safe)  # (r,)
-
-    if sigma_split == "sym":
-        # A = U @ diag(sqrtS)  -> broadcast multiply columns of U by sqrtS
-        # B = diag(sqrtS) @ Vh -> broadcast multiply rows of Vh by sqrtS
-        A = U * sqrtS   # (m, r)
-        B = sqrtS.unsqueeze(1) * Vh  # (r, n)
-    elif sigma_split == "left":
-        A = U * S       # (m, r)
-        B = Vh          # (r, n)
-    elif sigma_split == "right":
-        A = U
-        B = S.unsqueeze(1) * Vh
+    if split_sigma == "sym":
+        A = U_r @ torch.diag(torch.sqrt(S_r))
+        B = torch.diag(torch.sqrt(S_r)) @ Vh_r
+    elif split_sigma == "left":
+        A = U_r @ torch.diag(S_r)
+        B = Vh_r
+    elif split_sigma == "right":
+        A = U_r
+        B = torch.diag(S_r) @ Vh_r
     else:
-        raise ValueError(f"Unknown sigma_split: {sigma_split}")
-
-    # Optional: re-scale so ||A@B||_F matches ||W||_F (helps if many tiny S)
-    recon_norm = torch.linalg.norm(A @ B)
-    W_norm = torch.linalg.norm(W32)
-    if recon_norm > 0:
-        scale = (W_norm / recon_norm).sqrt()  # split scale symmetrically
-        A = A * scale
-        B = B * scale
+        raise ValueError(f"Unknown split_sigma: {split_sigma}")
 
     return A, B
