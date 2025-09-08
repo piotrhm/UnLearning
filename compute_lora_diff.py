@@ -87,7 +87,7 @@ def main():
 
     # Load LoRA parameters and apply to the model
     lora_sd = torch.load(args.lora, map_location="cpu")
-    apply_lora_to_model(model.model.diffusion_model, lora_sd, alpha=8)
+    apply_lora_to_model(model.model.diffusion_model, lora_sd, alpha=16)
 
     # Initialize DDIM samplers
     sampler_orig = DDIMSampler(model_orig)
@@ -145,7 +145,9 @@ def main():
 
                 # Compute epsilon predictions for both models
                 eps_lora = model.apply_model(z_batch, t_enc_ddpm, cond)
+                print("eps_lora ", eps_lora)
                 eps_orig = model_orig.apply_model(z_batch, t_enc_ddpm, cond_orig)
+                print("eps_orig ", eps_orig)
 
                 # Compute norm of the difference and record it
                 diffs = (
