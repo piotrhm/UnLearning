@@ -76,7 +76,7 @@ def apply_lora_to_model(model, lora_state_dict, alpha=4):
 
         L = lora_state_dict[L_key].to(model_sd[W_key].device)
         
-        A, B, svd_lowrank(model_sd[W_key].T, rank=40, split_sigma='left')
+        A, B = svd_lowrank(model_sd[W_key].T, rank=40, split_sigma='left')
 
         delta = A @ L.weight @ B
         model_sd[W_key] = model_sd[W_key] + alpha * delta
