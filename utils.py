@@ -63,10 +63,8 @@ def apply_lora_to_model(model, lora_state_dict, alpha=4):
         alpha (float): Scaling factor for the LoRA update (default: 4).
     """
     model_sd = model.state_dict()
-    
-    from utils_xs_lora.initialization_utils import find_and_initialize
-    
-   
+        
+    print("Applying LoRA adapters to model weights...")
     for lora_L_key in [k for k in lora_state_dict if k.endswith(".lora.default_lora_latent_mapping")]:
         prefix = lora_L_key[:-len(".lora.default_lora_latent_mapping")]
         print(prefix)
