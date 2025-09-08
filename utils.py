@@ -2,7 +2,11 @@ from ldm.util import instantiate_from_config
 from omegaconf import OmegaConf
 import torch
 import numpy as np
+import yaml
+
 from ldm.models.diffusion.ddimcopy import DDIMSampler
+from peft import LoraConfig
+
 
 def set_seed(seed: int):
     torch.random.manual_seed(seed)
@@ -60,18 +64,34 @@ def apply_lora_to_model(model, lora_state_dict, alpha=4):
         alpha (float): Scaling factor for the LoRA update (default: 4).
     """
     model_sd = model.state_dict()
+    
+    from utils_xs_lora.initialization_utils import find_and_initialize
+    adapter_name = "default"
+    lora_config = LoraConfig(
+            r=40,
+            lora_alpha=16,
+            target_modules=["attn2.to_k", "attn2.to_v"],
+            lora_dropout=0,
+            task_type="CAUSAL_LM",
+        )
+    peft_config_dict = {adapter_name: lora_config}
 
-    for lora_A_key in [k for k in lora_state_dict if k.endswith(".lora.A")]:
-        prefix = lora_A_key[:-len(".lora.A")]
-
-        A_key = prefix + ".lora.A"
-        B_key = prefix + ".lora.B"
+    with open("configs/reconstruct_config.yaml", 'r') as stream:
+        reconstr_config = yaml.load(stream, Loader=yaml.FullLoader)
+    reconstr_type = reconstr_config['reconstruction_type']
+    reconstr_config[reconstr_type]['rank'] = peft_config_dict[adapter_name].r
+    find_and_initialize(model.model.diffusion_model, peft_config_dict, adapter_name=adapter_name, reconstr_type=reconstr_type,
+                        writer=None, reconstruct_config=reconstr_config)
+   
+    for lora_L_key in [k for k in lora_state_dict if k.endswith(".lora.default_lora_latent_mapping")]:
+        prefix = lora_L_key[:-len(".lora.default_lora_latent_mapping")]
+        print(prefix)
+        
         L_key = prefix + ".lora.default_lora_latent_mapping"
         W_key = prefix + ".weight"
 
-
-        A = lora_state_dict[A_key].to(model_sd[W_key].device)
-        B = lora_state_dict[B_key].to(model_sd[W_key].device)
+        A = model.lora.A
+        B = model.lora.B
         L = lora_state_dict[L_key].to(model_sd[W_key].device)
 
         delta = A @ L.weight @ B
