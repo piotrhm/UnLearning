@@ -150,9 +150,8 @@ def main():
                 #print("eps_orig ", eps_orig)
 
                 # Compute norm of the difference and record it
-                diffs = (
-                    eps_lora - eps_orig
-                ).view(n_samples, -1).norm(dim=1).cpu().numpy().tolist()
+                diffs = (eps_lora.float() - eps_orig.float()).view(n_samples, -1).norm(dim=1).cpu().numpy().tolist()
+
                 print(diffs)
                 prompt_diffs[prompt].extend(diffs)
 
