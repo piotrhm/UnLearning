@@ -1,18 +1,14 @@
-import math
 import types
 
-import peft
 import torch
-from peft.import_utils import is_bnb_available
 from peft.utils import _get_submodules
-from torch.nn import init
 from tqdm import tqdm
 
 from .latent_utils import forward_latent
-from .svd_utils import get_linear_rec_svd, svd_lowrank
+from .svd_utils import svd_lowrank
 
 
-def get_replacement_module(weight, module_name, type, writer, reconstruct_config):
+def get_replacement_module(weight, type, reconstruct_config):
     cfg = reconstruct_config[type]
     if type != 'svd':
         raise NotImplementedError(f"{type} is currently not supported.")
@@ -40,32 +36,11 @@ def replace_module_weights(param: torch.nn.Parameter, new_weight: torch.Tensor):
         param.data.copy_(new_weight)
 
 
-# def update_decoder_weights(target_module, new_weight):
-#     device = target_module.weight.device
-#     with torch.no_grad():
-#         target_module.weight.copy_(new_weight)
-
-#     # dispatch to correct device
-#     for name, module in target_module.named_modules():
-#         if "lora_" in name:
-#             module.to(device)
-
-
-def kaiming_uniform_init_lower_half(matrix: torch.tensor):
-    rows, _ = matrix.size()
-    init.kaiming_uniform_(matrix[math.ceil(rows / 2):, :], a=math.sqrt(5))
-    return matrix
-
-def kaiming_uniform_init(matrix: torch.tensor):
-    init.kaiming_uniform_(matrix, a=math.sqrt(5))
-    return matrix
-  
 def find_and_initialize(model, peft_config, adapter_name, reconstr_type, reconstruct_config, writer):
     """
     :param adapter_name: options: 'default'
     :param reconstr_type: options: 'svd'
     """
-    
     reconstruction_mode = reconstruct_config['reconstr_mode']
     lora_config = peft_config[adapter_name]
     
@@ -78,23 +53,17 @@ def find_and_initialize(model, peft_config, adapter_name, reconstr_type, reconst
         if target_module_found:
             if not is_target_modules_in_base_model:
                 is_target_modules_in_base_model = True
-            _, target, target_name = _get_submodules(model, key)
+            _, target, _ = _get_submodules(model, key)
 
             if reconstruction_mode == 'separated':
-                replacement_encoder_weight, replacement_decoder_weight = get_replacement_module(weight=target.original.weight.T,
-                                                                                                module_name=key,
-                                                                                                type=reconstr_type,
-                                                                                                writer=writer,
-                                                                                                reconstruct_config=reconstruct_config)
+                A_svd, B_svd = get_replacement_module(
+                    weight=target.original.weight.T,
+                    type=reconstr_type,
+                    reconstruct_config=reconstruct_config
+                )
 
-                
-                print(replacement_decoder_weight)
-                print("Expected A shape:", target.lora.A.shape)
-                print("Expected B shape:", target.lora.B.shape)
-                print("Got encoder (replacement_encoder_weight):", replacement_encoder_weight.shape)
-                print("Got decoder (replacement_decoder_weight):", replacement_decoder_weight.shape)
-                replace_module_weights(target.lora.B, replacement_decoder_weight)
-                replace_module_weights(target.lora.A, replacement_encoder_weight)
+                replace_module_weights(target.lora.B, A_svd)
+                replace_module_weights(target.lora.A, B_svd)
 
                 target.lora.forward = types.MethodType(forward_latent, target.lora)
                 
@@ -103,15 +72,8 @@ def find_and_initialize(model, peft_config, adapter_name, reconstr_type, reconst
                 target.lora.default_lora_latent_mapping.to(target.lora.A.device)
                 
                 target.lora.default_lora_latent_mapping.weight.requires_grad = True
-                
                 target.lora.A.requires_grad = False
                 target.lora.B.requires_grad = False
-                
-                print(target.lora.default_lora_latent_mapping.weight)
-                print(target.lora.A)
-                print(target.lora.B)
-                if not target.lora.B.any():
-                    print("All zeros")
 
     if not is_target_modules_in_base_model:
         raise ValueError(
