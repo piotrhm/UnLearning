@@ -75,10 +75,15 @@ def apply_lora_to_model(model, lora_state_dict, alpha=4):
         W_key = prefix + ".weight"
 
         L = lora_state_dict[L_key].to(model_sd[W_key].device)
+        print(L.shape)
+        print(L)
         
         A, B = svd_lowrank(model_sd[W_key].T, rank=40, split_sigma='left')
 
         delta = A @ L.weight @ B
+        print(delta.shape)
+        print(A.shape)
+        print(B.shape)
         model_sd[W_key] = model_sd[W_key] + alpha * delta
 
     model.load_state_dict(model_sd, strict=False)
