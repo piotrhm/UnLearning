@@ -78,7 +78,7 @@ def apply_lora_to_model(model, lora_state_dict, alpha=4):
         
         A, B = svd_lowrank(model_sd[W_key].T, rank=40, split_sigma='left')
 
-        delta = A @ L.weight @ B
+        delta = A @ L @ B
         print(delta.shape)
         print(A.shape)
         print(B.shape)
