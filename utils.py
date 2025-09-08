@@ -63,6 +63,7 @@ def apply_lora_to_model(model, lora_state_dict, alpha=4):
         alpha (float): Scaling factor for the LoRA update (default: 4).
     """
     model_sd = model.state_dict()
+    print(lora_state_dict)
         
     print("Applying LoRA adapters to model weights...")
     for lora_L_key in [k for k in lora_state_dict if k.endswith(".lora.default_lora_latent_mapping")]:
