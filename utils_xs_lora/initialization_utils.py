@@ -9,17 +9,15 @@ from torch.nn import init
 from tqdm import tqdm
 
 from .latent_utils import forward_latent
-from .svd_utils import get_linear_rec_svd
+from .svd_utils import get_linear_rec_svd, svd_lowrank
 
 
 def get_replacement_module(weight, module_name, type, writer, reconstruct_config):
     cfg = reconstruct_config[type]
     if type == 'svd':
-        reconstructed_matrix, enc, dec = get_linear_rec_svd(
+        enc, dec = svd_lowrank(
             weight.cpu().detach().numpy(), 
-            cfg['rank'],
-            cfg['n_iter'],
-            cfg['random_state']
+            cfg['rank']
         )
         final_enc = torch.tensor(enc, dtype=weight.dtype, device=weight.device)
         final_dec = torch.tensor(dec, dtype=weight.dtype, device=weight.device)
