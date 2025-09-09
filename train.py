@@ -208,8 +208,13 @@ def main():
         reconstr_config = yaml.load(stream, Loader=yaml.FullLoader)
     reconstr_type = reconstr_config['reconstruction_type']
     reconstr_config[reconstr_type]['rank'] = peft_config_dict[adapter_name].r
-    find_and_initialize(model.model.diffusion_model, peft_config_dict, adapter_name=adapter_name, reconstr_type=reconstr_type,
-                        writer=None, reconstruct_config=reconstr_config)
+    find_and_initialize(
+        model.model.diffusion_model, 
+        peft_config_dict, 
+        adapter_name=adapter_name, 
+        reconstr_type=reconstr_type,
+        reconstruct_config=reconstr_config
+    )
     
     # Get trainable parameters (only LoRA layers)
     lora_layers = list(
