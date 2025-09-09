@@ -1,8 +1,6 @@
 import json
 import os
 import argparse
-
-import torch
 import pandas as pd
 
 from PIL import Image

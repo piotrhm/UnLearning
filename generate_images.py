@@ -154,7 +154,8 @@ if __name__ == "__main__":
 
         # Apply LoRA to unlearned model
         lora_state_dict = torch.load(lora_filepath, map_location=args.device)
-        apply_lora_xs_to_model(model_unl.model.diffusion_model, lora_state_dict, rank=args.lora_rank, alpha=16)
+        apply_lora_xs_to_model(model_unl.model.diffusion_model, lora_state_dict, 
+                               rank=settings["lora_rank"], alpha=settings["lora_alpha"])
 
         for prompt in prompts:
             class_name = prompt.split(" ")[-1]
