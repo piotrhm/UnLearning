@@ -62,6 +62,10 @@ def parse_args():
         "--device", type=str, default="cuda:0",
         help="device to run generation on"
     )
+    parser.add_argument(
+        "--lora_rank", type=int, default=1, 
+        help="LoRA rank parameter"
+    )
 
     return parser.parse_args()
 
@@ -150,7 +154,7 @@ if __name__ == "__main__":
 
         # Apply LoRA to unlearned model
         lora_state_dict = torch.load(lora_filepath, map_location=args.device)
-        apply_lora_xs_to_model(model_unl.model.diffusion_model, lora_state_dict, rank=40, alpha=8)
+        apply_lora_xs_to_model(model_unl.model.diffusion_model, lora_state_dict, rank=args.lora_rank, alpha=16)
 
         for prompt in prompts:
             class_name = prompt.split(" ")[-1]
