@@ -36,7 +36,7 @@ def replace_module_weights(param: torch.nn.Parameter, new_weight: torch.Tensor):
         param.data.copy_(new_weight)
 
 
-def find_and_initialize(model, peft_config, adapter_name, reconstr_type, reconstruct_config, writer):
+def find_and_initialize(model, peft_config, adapter_name, reconstr_type, reconstruct_config):
     """
     :param adapter_name: options: 'default'
     :param reconstr_type: options: 'svd'

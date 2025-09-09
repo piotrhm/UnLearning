@@ -52,7 +52,7 @@ def print_trainable_parameters(model, max_params: int = 10):
             if count >= max_params:
                 break
 
-def apply_lora_to_model(model, lora_state_dict, alpha=4):
+def apply_lora_xs_to_model(model, lora_state_dict, rank=1, alpha=4):
     """
     Apply LoRA adapters to a base model’s weights, scaling by the given alpha.
 
@@ -67,22 +67,14 @@ def apply_lora_to_model(model, lora_state_dict, alpha=4):
     print("Applying LoRA adapters to model weights...")
     for lora_L_key in [k for k in lora_state_dict if k.endswith(".lora.default_lora_latent_mapping.weight")]:
         prefix = lora_L_key[:-len(".lora.default_lora_latent_mapping.weight")]
-        print(prefix)
         
         L_key = prefix + ".lora.default_lora_latent_mapping.weight"
         W_key = prefix + ".weight"
 
         L = lora_state_dict[L_key].to(model_sd[W_key].device)
-        print(L.shape)
-        print(L)
-        
-        A, B = svd_lowrank(model_sd[W_key].T, rank=40, split_sigma='left')
+        A, B = svd_lowrank(model_sd[W_key].T, rank=rank, split_sigma='left')
 
         delta = A @ L @ B
-        print(delta.shape)
-        print(A.shape)
-        print(B.shape)
-        print(model_sd[W_key].shape)
         model_sd[W_key] = model_sd[W_key] + alpha * delta.T
 
     model.load_state_dict(model_sd, strict=False)

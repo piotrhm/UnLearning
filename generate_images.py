@@ -3,7 +3,7 @@ import json
 import argparse
 import torch
 from ldm.models.diffusion.ddimcopy import DDIMSampler
-from utils import load_model_from_config, apply_lora_to_model, set_seed
+from utils import load_model_from_config, apply_lora_xs_to_model, set_seed
 from torchvision.transforms.functional import to_pil_image
 from autoguide import AutoGuidedModel
 import numpy as np
@@ -150,7 +150,7 @@ if __name__ == "__main__":
 
         # Apply LoRA to unlearned model
         lora_state_dict = torch.load(lora_filepath, map_location=args.device)
-        apply_lora_to_model(model_unl.model.diffusion_model, lora_state_dict, alpha=8)
+        apply_lora_xs_to_model(model_unl.model.diffusion_model, lora_state_dict, rank=40, alpha=8)
 
         for prompt in prompts:
             class_name = prompt.split(" ")[-1]
