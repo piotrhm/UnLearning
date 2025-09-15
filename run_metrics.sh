@@ -3,7 +3,7 @@ BASE_OUTPUT="/home/gmhelm/repo/UnLearning/output"
 # Glob and sort to have a stable order
 mapfile -t EXP_DIRS < <(ls -d "${BASE_OUTPUT}"/* | sort)
 
-for EXP_DIR in $EXP_DIRS; do
+for EXP_DIR in "${EXP_DIRS[@]}"; do
   echo "[$(date)] Using EXP_DIR=$EXP_DIR"
   SAMPLES_DIR=$EXP_DIR/images
   METRICS_DIR=$EXP_DIR/metrics
