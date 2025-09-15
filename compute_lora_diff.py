@@ -32,6 +32,10 @@ def parse_args():
         help="LoRA rank parameter"
     )
     parser.add_argument(
+        "--lora_alpha", type=int, default=1, 
+        help="LoRA alpha parameter"
+    )
+    parser.add_argument(
         "--prompts_json", required=True,
         help="Path to JSON file containing an array of prompts"
     )
@@ -91,7 +95,7 @@ def main():
 
     # Load LoRA parameters and apply to the model
     lora_sd = torch.load(args.lora, map_location="cpu")
-    apply_lora_xs_to_model(model.model.diffusion_model, lora_sd, rank=args.lora_rank, alpha=16)
+    apply_lora_xs_to_model(model.model.diffusion_model, lora_sd, rank=args.lora_rank, alpha=args.lora_alpha)
 
     # Initialize DDIM samplers
     sampler_orig = DDIMSampler(model_orig)
