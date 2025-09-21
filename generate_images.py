@@ -100,6 +100,8 @@ if __name__ == "__main__":
         if args.decide_w and os.path.exists(diff_results_path):
             with open(diff_results_path, 'r') as f:
                 results = json.load(f)
+        else:
+            results = {"prompt_avgs": {}}
 
         with open(train_json_path, 'r') as f:
             settings = json.load(f)
