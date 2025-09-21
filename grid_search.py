@@ -92,7 +92,7 @@ for (start_guidance, negative_guidance, lora_rank, lora_alpha, lr, iters) in gri
         "--w2", str(2),
         "--seed", str(seed),
         "--device", device,
-        "--decide_w", False
+        "--remove_decide_w"
     ]
     print("Running:", " ".join(gen_cmd))
     subprocess.run(gen_cmd, check=True)

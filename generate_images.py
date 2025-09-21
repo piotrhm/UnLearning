@@ -50,10 +50,7 @@ def parse_args():
         "--device", type=str, default="cuda:0",
         help="device to run generation on"
     )
-    parser.add_argument(
-        "--decide_w", type=bool, default=True,
-        help="Whether to decide weights based on prompts"
-    )
+    parser.add_argument('--remove_decide_w', action='store_true', help='Use decide_w logic')
 
     return parser.parse_args()
 
@@ -97,7 +94,7 @@ if __name__ == "__main__":
         diff_results_path = os.path.join(exp_filepath, "calc_diff_results.json")
         train_json_path = os.path.join(exp_filepath, "train_config.json")
         
-        if args.decide_w and os.path.exists(diff_results_path):
+        if not args.remove_decide_w and os.path.exists(diff_results_path):
             with open(diff_results_path, 'r') as f:
                 results = json.load(f)
         else:
@@ -154,8 +151,8 @@ if __name__ == "__main__":
             if len(os.listdir(class_root)) == args.samples:
                 continue
 
-            print(args.decide_w)
-            if args.decide_w:
+            print(args.remove_decide_w)
+            if not args.remove_decide_w:
                 w = decide_w(
                     results["prompt_avgs"].get(prompt), results["prompt_avgs"].get(""),
                     w1=args.w1, w2=args.w2
