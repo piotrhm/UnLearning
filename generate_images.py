@@ -97,7 +97,7 @@ if __name__ == "__main__":
         diff_results_path = os.path.join(exp_filepath, "calc_diff_results.json")
         train_json_path = os.path.join(exp_filepath, "train_config.json")
         
-        if args.decide_w and (not os.path.exists(diff_results_path)):
+        if args.decide_w and os.path.exists(diff_results_path):
             with open(diff_results_path, 'r') as f:
                 results = json.load(f)
 
