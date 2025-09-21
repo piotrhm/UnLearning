@@ -154,7 +154,7 @@ if __name__ == "__main__":
             if len(os.listdir(class_root)) == args.samples:
                 continue
 
-            print(args.decide_w
+            print(args.decide_w)
             if args.decide_w:
                 w = decide_w(
                     results["prompt_avgs"].get(prompt), results["prompt_avgs"].get(""),
