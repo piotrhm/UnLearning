@@ -10,7 +10,7 @@ negative_guidances = [2.0]
 lora_ranks = [4, 8, 16, 20]
 lora_alphas = [8, 16]
 lrs = [1e-4, 3e-5, 1e-5]
-iterations = [200]
+iterations = [100, 200, 300]
 image_size = 512
 ddim_steps = 50
 ddim_eta = 0.0
@@ -53,7 +53,11 @@ for (start_guidance, negative_guidance, lora_rank, lora_alpha, lr, iters) in gri
     model_dir = os.path.join(exp_dir, "models")
     images_dir = os.path.join(exp_dir, "images")
     metrics_dir = os.path.join(exp_dir, "metrics")
-
+    
+    if os.path.exists(exp_dir):
+        print(f"Experiment {exp_name} already exists, skipping...")
+        continue
+    
     print("Experiment Name:", exp_name)
 
     # 1. Train
@@ -98,7 +102,6 @@ for (start_guidance, negative_guidance, lora_rank, lora_alpha, lr, iters) in gri
     subprocess.run(gen_cmd, check=True)
     
     os.makedirs(metrics_dir, exist_ok=True)
-    # Iterate over class_name directories inside samples_dir
     for class_path in glob.glob(os.path.join(images_dir, "*")):
         class_name = os.path.basename(class_path)
         metrics_output_dir = os.path.join(metrics_dir, class_name)
