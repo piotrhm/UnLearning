@@ -151,7 +151,6 @@ if __name__ == "__main__":
             if len(os.listdir(class_root)) == args.samples:
                 continue
 
-            print(args.remove_decide_w)
             if not args.remove_decide_w:
                 w = decide_w(
                     results["prompt_avgs"].get(prompt), results["prompt_avgs"].get(""),
