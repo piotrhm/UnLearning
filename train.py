@@ -4,18 +4,18 @@ import yaml
 import argparse
 from functools import partial
 
-
 import numpy as np
 import torch
+import matplotlib.pyplot as plt
 
-from utils import print_trainable_parameters, set_seed, get_models
+from utils import set_seed, get_models
 from tqdm import tqdm
-
 
 from ldm.util import instantiate_from_config
 from sampling import sample_model
 from lora import LoRALinear, inject_lora_nsfw, inject_lora
 from peft import LoraConfig
+
 
 def parse_args():
     """Parse command line arguments"""
@@ -312,6 +312,16 @@ def main():
     config["final_loss"] = losses[-1]
     config["average_loss"] = sum(losses) / len(losses)
     
+    if args.save_losses:
+        np.savetxt(os.path.join(args.output_dir, dir_name, "models", "losses.txt"), np.array(losses))
+        print(f"Training losses saved to {os.path.join(args.output_dir, dir_name, 'models', 'losses.txt')}")
+        plt.plot(losses)
+        plt.xlabel("Iteration")
+        plt.ylabel("Loss")
+        plt.title("Training Losses")
+        plt.savefig(os.path.join(args.output_dir, dir_name, "models", "losses.png"))
+        plt.close()
+
     with open(os.path.join(args.output_dir, dir_name, "train_config.json"), 'w') as f:
         json.dump(config, f, indent=4)
     print(f"Training configuration saved to {os.path.join(args.output_dir, 'train_config.json')}")
