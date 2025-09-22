@@ -6,7 +6,7 @@ import numpy as np
 from tqdm import tqdm
 import time
 
-from utils import set_seed, load_model_from_config, apply_lora_to_model
+from utils import set_seed, load_model_from_config, apply_lora_xs_to_model
 from sampling import sample_model
 from ldm.models.diffusion.ddimcopy import DDIMSampler
 
@@ -26,6 +26,14 @@ def parse_args():
     parser.add_argument(
         "--lora", required=True,
         help="Path to the LoRA state dict (.pth)"
+    )
+    parser.add_argument(
+        "--lora_rank", type=int, default=1, 
+        help="LoRA rank parameter"
+    )
+    parser.add_argument(
+        "--lora_alpha", type=int, default=1, 
+        help="LoRA alpha parameter"
     )
     parser.add_argument(
         "--prompts_json", required=True,
@@ -87,7 +95,7 @@ def main():
 
     # Load LoRA parameters and apply to the model
     lora_sd = torch.load(args.lora, map_location="cpu")
-    apply_lora_to_model(model.model.diffusion_model, lora_sd, alpha=8)
+    apply_lora_xs_to_model(model.model.diffusion_model, lora_sd, rank=args.lora_rank, alpha=args.lora_alpha)
 
     # Initialize DDIM samplers
     sampler_orig = DDIMSampler(model_orig)
@@ -148,9 +156,7 @@ def main():
                 eps_orig = model_orig.apply_model(z_batch, t_enc_ddpm, cond_orig)
 
                 # Compute norm of the difference and record it
-                diffs = (
-                    eps_lora - eps_orig
-                ).view(n_samples, -1).norm(dim=1).cpu().numpy().tolist()
+                diffs = (eps_lora.float() - eps_orig.float()).view(n_samples, -1).norm(dim=1).cpu().numpy().tolist()
                 prompt_diffs[prompt].extend(diffs)
 
                 # Free up GPU memory

@@ -2,7 +2,10 @@ from ldm.util import instantiate_from_config
 from omegaconf import OmegaConf
 import torch
 import numpy as np
+
 from ldm.models.diffusion.ddimcopy import DDIMSampler
+from utils_xs_lora.svd_utils import svd_lowrank
+
 
 def set_seed(seed: int):
     torch.random.manual_seed(seed)
@@ -49,7 +52,7 @@ def print_trainable_parameters(model, max_params: int = 10):
             if count >= max_params:
                 break
 
-def apply_lora_to_model(model, lora_state_dict, alpha=4):
+def apply_lora_xs_to_model(model, lora_state_dict, rank=1, alpha=4):
     """
     Apply LoRA adapters to a base model’s weights, scaling by the given alpha.
 
@@ -60,21 +63,18 @@ def apply_lora_to_model(model, lora_state_dict, alpha=4):
         alpha (float): Scaling factor for the LoRA update (default: 4).
     """
     model_sd = model.state_dict()
-
-    for lora_A_key in [k for k in lora_state_dict if k.endswith(".lora.A")]:
-        prefix = lora_A_key[:-len(".lora.A")]
-
-        A_key = prefix + ".lora.A"
-        B_key = prefix + ".lora.B"
-        W_key = prefix + ".weight"  # the original weight in the model
-
-
-        A = lora_state_dict[A_key].to(model_sd[W_key].device)
-        B = lora_state_dict[B_key].to(model_sd[W_key].device)
-
-        delta = A.matmul(B)
-        delta = delta.T
         
-        model_sd[W_key] = model_sd[W_key] + alpha * delta
+    print("Applying LoRA adapters to model weights...")
+    for lora_L_key in [k for k in lora_state_dict if k.endswith(".lora.default_lora_latent_mapping.weight")]:
+        prefix = lora_L_key[:-len(".lora.default_lora_latent_mapping.weight")]
+        
+        L_key = prefix + ".lora.default_lora_latent_mapping.weight"
+        W_key = prefix + ".weight"
+
+        L = lora_state_dict[L_key].to(model_sd[W_key].device)
+        A, B = svd_lowrank(model_sd[W_key].T, rank=rank, split_sigma='left')
+
+        delta = A @ L @ B
+        model_sd[W_key] = model_sd[W_key] + alpha * delta.T
 
     model.load_state_dict(model_sd, strict=False)

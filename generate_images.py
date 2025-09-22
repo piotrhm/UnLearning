@@ -3,7 +3,7 @@ import json
 import argparse
 import torch
 from ldm.models.diffusion.ddimcopy import DDIMSampler
-from utils import load_model_from_config, apply_lora_to_model, set_seed
+from utils import load_model_from_config, apply_lora_xs_to_model, set_seed
 from torchvision.transforms.functional import to_pil_image
 from autoguide import AutoGuidedModel
 import numpy as np
@@ -22,18 +22,6 @@ def parse_args():
         "--ckpt", type=str, default="models/sd-v1-4-full-ema.ckpt",
         help="path to model checkpoint"
     )
-    # parser.add_argument(
-    #     "--lora", type=str, default="original_train.pth",
-    #     help="path to LoRA state dict"
-    # )
-    # parser.add_argument(
-    #     "--train_json", type=str, default="data/train_json.json",
-    #     help="prompts for image generation"
-    # )
-    # parser.add_argument(
-    #     "--diff_results", type=str, default="calc_diff_results.json",
-    #     help="path to JSON file with difference results"
-    # )
     parser.add_argument(
         "--output_dir", type=str, default="cat",
         help=""
@@ -55,13 +43,14 @@ def parse_args():
         help="number of sampling steps"
     )
     parser.add_argument(
-        "--seed", type=int, default=2024,
+        "--seed", type=int, default=42,
         help="random seed for reproducibility"
     )
     parser.add_argument(
         "--device", type=str, default="cuda:0",
         help="device to run generation on"
     )
+    parser.add_argument('--remove_decide_w', action='store_true', help='Use decide_w logic')
 
     return parser.parse_args()
 
@@ -94,20 +83,22 @@ if __name__ == "__main__":
     WORLD_SIZE = int(os.environ.get("WORLD_SIZE", "1"))
 
     args = parse_args()
-
     exps = os.listdir(args.output_dir)
+    
     print(f"Exps: {exps}", flush=True)
     for exp in exps:
         exp_filepath = os.path.join(args.output_dir, exp)
         img_root = os.path.join(args.output_dir, exp, "images")
         lora_filepath = os.path.join(exp_filepath, "models", "lora.pth")
        
-
         diff_results_path = os.path.join(exp_filepath, "calc_diff_results.json")
         train_json_path = os.path.join(exp_filepath, "train_config.json")
         
-        with open(diff_results_path, 'r') as f:
-            results = json.load(f)
+        if not args.remove_decide_w and os.path.exists(diff_results_path):
+            with open(diff_results_path, 'r') as f:
+                results = json.load(f)
+        else:
+            results = {"prompt_avgs": {}}
 
         with open(train_json_path, 'r') as f:
             settings = json.load(f)
@@ -120,7 +111,7 @@ if __name__ == "__main__":
         prompts = prompts[:-1]
         print("Prompts: ", prompts, flush=True)
 
-         # collect all valid subfolders
+        # collect all valid subfolders
         subs = [
             d for d in os.listdir(img_root)
             if os.path.isdir(os.path.join(img_root, d))
@@ -150,7 +141,8 @@ if __name__ == "__main__":
 
         # Apply LoRA to unlearned model
         lora_state_dict = torch.load(lora_filepath, map_location=args.device)
-        apply_lora_to_model(model_unl.model.diffusion_model, lora_state_dict, alpha=8)
+        apply_lora_xs_to_model(model_unl.model.diffusion_model, lora_state_dict, 
+                               rank=settings["lora_rank"], alpha=settings["lora_alpha"])
 
         for prompt in prompts:
             class_name = prompt.split(" ")[-1]
@@ -159,10 +151,14 @@ if __name__ == "__main__":
             if len(os.listdir(class_root)) == args.samples:
                 continue
 
-            w = decide_w(
-                results["prompt_avgs"].get(prompt), results["prompt_avgs"].get(""),
-                w1=args.w1, w2=args.w2
-            )
+            if not args.remove_decide_w:
+                w = decide_w(
+                    results["prompt_avgs"].get(prompt), results["prompt_avgs"].get(""),
+                    w1=args.w1, w2=args.w2
+                )
+            else:
+                w = -1.0
+
             # Prepare models and sampler
             auto_model = AutoGuidedModel(
                 model_full, model_unl, w=w
